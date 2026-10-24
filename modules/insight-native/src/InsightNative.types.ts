@@ -11,3 +11,10 @@ export type StoredInsight = {
   createdAt: string;
   revealed: boolean;
 };
+
+/** Where the backend sends this install's pushes: FCM on Android, APNs on iOS. */
+export type PushRegistration = {
+  token: string;
+  /** iOS only: development-signed builds get APNs sandbox tokens. */
+  apnsEnvironment: 'SANDBOX' | 'PRODUCTION' | null;
+};

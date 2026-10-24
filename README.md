@@ -4,14 +4,14 @@ The app for Insight Giver, an asynchronous diary. Thoughts go into a chat-style 
 expecting a reply. About once a day, something you wrote comes back as an insight on a
 home-screen widget, so most of the time you only glance at the widget instead of opening the app.
 
-Expo SDK 58 · React Native 0.88 · Expo Router · expo-sqlite · iOS WidgetKit · Android Glance · FCM
+Expo SDK 58 · React Native 0.88 · Expo Router · expo-sqlite · iOS WidgetKit + APNs · Android Glance + FCM
 
 ## What's where
 
 ```
 src/app/                 Expo Router screens: the diary (index) and the insight a widget tap opens
 src/lib/                 SQLite diary, offline outbox + sync, device account, widget hand-off
-modules/insight-native/  local Expo module: native push handling, shared widget storage, FCM token,
+modules/insight-native/  local Expo module: native push handling, shared widget storage, push token,
                          the Android Glance widget, and a config plugin for app-level native settings
 targets/widget/          iOS WidgetKit extension, linked into the Xcode project by @bacons/apple-targets
 ```
@@ -26,13 +26,13 @@ and `app.config.ts`.
 
 **Silent pushes never boot JavaScript.**
 
-- *iOS:* `InsightAppDelegateSubscriber` receives the background push in
-  `application(_:didReceiveRemoteNotification:fetchCompletionHandler:)`, writes the insight to the
-  App Group, reloads the WidgetKit timelines and calls the completion handler. A background launch
-  connects no UI scene, and Expo SDK 58 starts React Native from the scene delegate, so the JS engine
-  never starts. The config plugin fails `prebuild` if a future AppDelegate template starts React
-  Native at launch again.
-- *Android:* `InsightMessagingService` (a `FirebaseMessagingService`) handles the data message,
+- *iOS:* the backend sends straight to APNs; there is no Firebase on iOS. `InsightAppDelegateSubscriber`
+  receives the background push in `application(_:didReceiveRemoteNotification:fetchCompletionHandler:)`,
+  writes the insight to the App Group, reloads the WidgetKit timelines and calls the completion
+  handler. A background launch connects no UI scene, and Expo SDK 58 starts React Native from the
+  scene delegate, so the JS engine never starts. The config plugin fails `prebuild` if a future
+  AppDelegate template starts React Native at launch again.
+- *Android:* `InsightMessagingService` (a `FirebaseMessagingService`) handles the FCM data message,
   writes SharedPreferences and updates the Glance widget. It never touches the React host, and no
   headless JS task is registered.
 
@@ -47,9 +47,10 @@ insight revealed so the widget then shows all of it. The tap is the point: iOS a
 background pushes by how much the app is used, and a widget alone barely counts.
 
 **Sync.** Entries are saved to SQLite first and uploaded in the background (idempotent per
-`clientId`), so writing works offline. Every launch reports the FCM token and time zone (the
-backend delivers insights in the person's local morning) and pulls the latest insight, which also
-catches the widget up if a push was lost.
+`clientId`), so writing works offline. Every launch reports the push token (APNs device token on
+iOS, together with whether it belongs to the sandbox or production; FCM token on Android) and the
+time zone, since the backend delivers insights in the person's local morning. It also pulls the
+latest insight, which catches the widget up if a push was lost.
 
 ## Setup
 
@@ -64,10 +65,11 @@ npm install
 2. **Identifiers.** `APP_BUNDLE_ID` (default `com.insightgiver.app`; the App Group becomes
    `group.<bundle id>` and the widget `<bundle id>.widget`) and `APPLE_TEAM_ID`, which signing the
    widget extension needs. Register the App Group for both bundle ids in the Apple Developer portal.
-3. **Firebase** (skip it for UI work; the app runs without pushes). Add an iOS and an Android app to
-   a Firebase project, put `GoogleService-Info.plist` and `google-services.json` in the project
-   root (they are git-ignored), and upload an APNs auth key under Cloud Messaging. For EAS builds,
-   pass them as the file environment variables `GOOGLE_SERVICE_INFO_PLIST` and `GOOGLE_SERVICES_JSON`.
+3. **Pushes** (skip them for UI work; the app runs without). iOS needs nothing in the app beyond
+   signing: create an APNs auth key under Keys in the Apple Developer portal and give it to the
+   backend (`APNS_TEAM_ID`, `APNS_KEY_ID`, `APNS_PRIVATE_KEY`). Android needs Firebase: add an
+   Android app to a Firebase project and put its `google-services.json` in the project root (it is
+   git-ignored); for EAS builds, pass it as the file environment variable `GOOGLE_SERVICES_JSON`.
 
 ```sh
 npx expo run:ios       # or run:android: prebuilds, builds a development build and starts Metro
@@ -89,8 +91,5 @@ CI runs all four. It does not compile Swift or Kotlin, so build the app after na
 
 ## Known gaps
 
-- Firebase's Apple SDK ships only through SwiftPM from 13.0 on. The module pins
-  `FirebaseMessaging ~> 12.16`, the last line published to CocoaPods. Moving on means either
-  SwiftPM (once Expo's support leaves preview) or sending iOS pushes straight to APNs.
 - Tokens are device-bound: reinstalling the app creates a new account, and the old entries stay
   behind on the server.

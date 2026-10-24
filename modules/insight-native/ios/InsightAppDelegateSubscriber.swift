@@ -1,5 +1,4 @@
 import ExpoModulesCore
-import FirebaseMessaging
 import WidgetKit
 
 /// Handles insight pushes without React Native. A silent push launches the app in the background
@@ -11,17 +10,17 @@ public class InsightAppDelegateSubscriber: ExpoAppDelegateSubscriber {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
-    FirebaseSetup.configureIfPossible()
     // Silent pushes need no permission prompt, only an APNs registration.
     application.registerForRemoteNotifications()
     return true
   }
 
   public func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-    // Firebase's app delegate swizzling is off (FirebaseAppDelegateProxyEnabled), so hand the token over here.
-    if FirebaseSetup.isConfigured {
-      Messaging.messaging().apnsToken = deviceToken
-    }
+    PushRegistration.didRegister(deviceToken: deviceToken)
+  }
+
+  public func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+    PushRegistration.didFailToRegister()
   }
 
   public func application(
@@ -32,9 +31,6 @@ public class InsightAppDelegateSubscriber: ExpoAppDelegateSubscriber {
     guard let insight = StoredInsight(push: userInfo) else {
       completionHandler(.noData)
       return
-    }
-    if FirebaseSetup.isConfigured {
-      Messaging.messaging().appDidReceiveMessage(userInfo)
     }
     InsightStore.save(insight)
     WidgetCenter.shared.reloadAllTimelines()

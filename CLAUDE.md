@@ -23,6 +23,8 @@ resolves SDK-compatible versions from the installed `expo` package.
 - Insight pushes must be handled in native code without starting React Native: no headless JS, no
   JS background tasks, no notification libraries that boot the JS runtime (expo-notifications,
   @react-native-firebase/messaging). The prebuild tripwire in `app.plugin.js` guards the iOS side.
+- Pushes reach iOS straight from the backend through APNs, and Android through FCM. Firebase is an
+  Android-only dependency; keep it out of the iOS pod.
 - The stored-insight JSON (`id`, `body`, `preview`, `createdAt`, `revealed`) is written and read in
   four places: `modules/insight-native/ios/InsightStore.swift`, `targets/widget/InsightWidget.swift`,
   `modules/insight-native/android/.../InsightStore.kt` and `modules/insight-native/src`. Change them

@@ -47,13 +47,14 @@ class InsightNativeModule : Module() {
       store(record.toStoredInsight())
     }
 
-    AsyncFunction("getPushTokenAsync") { promise: Promise ->
+    AsyncFunction("getPushRegistrationAsync") { promise: Promise ->
       // Firebase initializes itself only when google-services.json was bundled (see app.config.ts).
       if (FirebaseApp.getApps(context).isEmpty()) {
         promise.resolve(null)
       } else {
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-          promise.resolve(if (task.isSuccessful) task.result else null)
+          val token = if (task.isSuccessful) task.result else null
+          promise.resolve(token?.let { mapOf("token" to it, "apnsEnvironment" to null) })
         }
       }
     }

@@ -1,5 +1,4 @@
 import ExpoModulesCore
-import FirebaseMessaging
 import WidgetKit
 
 struct InsightRecord: Record {
@@ -37,14 +36,14 @@ public class InsightNativeModule: Module {
       WidgetCenter.shared.reloadAllTimelines()
     }
 
-    AsyncFunction("getPushTokenAsync") { (promise: Promise) in
-      guard FirebaseSetup.isConfigured else {
-        promise.resolve(nil)
-        return
-      }
-      // Fails until APNs has handed over a device token; the app asks again on its next launch.
-      Messaging.messaging().token { token, _ in
-        promise.resolve(token)
+    AsyncFunction("getPushRegistrationAsync") { (promise: Promise) in
+      // Null when APNs hasn't issued a token within a few seconds; the app asks again on its next launch.
+      PushRegistration.token(timeout: 5) { token in
+        guard let token else {
+          promise.resolve(nil)
+          return
+        }
+        promise.resolve(["token": token, "apnsEnvironment": ApnsEnvironment.current])
       }
     }
   }

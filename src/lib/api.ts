@@ -15,7 +15,9 @@ export type Account = { accountId: string; token: string };
 
 export type DeviceCheckIn = {
   platform: 'IOS' | 'ANDROID';
+  /** FCM registration token on Android, APNs device token on iOS. */
   pushToken: string | null;
+  apnsEnvironment: 'SANDBOX' | 'PRODUCTION' | null;
   timeZone: string;
 };
 

@@ -10,9 +10,9 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
 const bundleIdentifier = process.env.APP_BUNDLE_ID ?? 'com.insightgiver.app';
 const appGroup = `group.${bundleIdentifier}`;
 
-// Firebase config files are per project and stay out of git. EAS can provide them as file
-// environment variables; locally, drop them next to this file. Without them the app still runs,
-// it just never receives pushes.
+// Android pushes go through FCM, which needs the Firebase project's google-services.json. It stays
+// out of git: EAS can provide it as a file environment variable; locally, drop it next to this
+// file. Without it the app still runs, it just never receives pushes on Android.
 function optionalFile(envName: string, fallback: string): string | undefined {
   const file = process.env[envName] ?? fallback;
   return fs.existsSync(path.resolve(__dirname, file)) ? file : undefined;
@@ -32,9 +32,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // Needed to sign the widget extension; find it in Xcode or the Apple Developer portal.
     appleTeamId: process.env.APPLE_TEAM_ID,
     supportsTablet: false,
-    googleServicesFile: optionalFile('GOOGLE_SERVICE_INFO_PLIST', './GoogleService-Info.plist'),
     entitlements: {
-      // Declared here (not only in the plugin) so @bacons/apple-targets mirrors it onto the widget.
+      // Shared with the widget target (targets/widget/expo-target.config.js).
       'com.apple.security.application-groups': [appGroup],
     },
   },
@@ -55,8 +54,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-sqlite',
     'expo-secure-store',
     'expo-localization',
-    // Firebase's iOS pods only build as frameworks.
-    ['expo-build-properties', { ios: { useFrameworks: 'static' } }],
     ['./modules/insight-native/app.plugin.js', { appGroup }],
     '@bacons/apple-targets',
   ],

@@ -40,10 +40,9 @@ yarn-error.*
 /ios
 /android
 
-# Firebase app configs are per project. Keep them local (app.config.ts picks them up when present)
-# or provide them to EAS as file environment variables.
+# The Firebase config for Android is per project. Keep it local (app.config.ts picks it up when present)
+# or provide it to EAS as a file environment variable.
 google-services.json
-GoogleService-Info.plist
 
 # Regenerated from targets/*/expo-target.config.js on every prebuild
 targets/*/Assets.xcassets/

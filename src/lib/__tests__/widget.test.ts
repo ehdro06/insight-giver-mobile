@@ -3,7 +3,7 @@ import { revealWidgetInsight, showOnWidget } from '../widget';
 
 jest.mock('../../../modules/insight-native', () => ({
   __esModule: true,
-  default: { getInsight: jest.fn(), setInsight: jest.fn(), getPushTokenAsync: jest.fn() },
+  default: { getInsight: jest.fn(), setInsight: jest.fn(), getPushRegistrationAsync: jest.fn() },
 }));
 
 const native = jest.mocked(InsightNative);

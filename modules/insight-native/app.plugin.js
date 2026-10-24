@@ -20,8 +20,6 @@ function withInsightNative(config, { appGroup, apsEnvironment = 'development' } 
     mod.modResults.UIBackgroundModes = [
       ...new Set([...(mod.modResults.UIBackgroundModes ?? []), 'remote-notification']),
     ];
-    // InsightAppDelegateSubscriber hands the APNs token to Firebase itself.
-    mod.modResults.FirebaseAppDelegateProxyEnabled = false;
     return mod;
   });
 

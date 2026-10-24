@@ -6,7 +6,7 @@ import { sync, SyncQueue } from '../sync';
 
 jest.mock('../../../modules/insight-native', () => ({
   __esModule: true,
-  default: { getInsight: jest.fn(), setInsight: jest.fn(), getPushTokenAsync: jest.fn() },
+  default: { getInsight: jest.fn(), setInsight: jest.fn(), getPushRegistrationAsync: jest.fn() },
 }));
 jest.mock('../account', () => ({ accountToken: jest.fn(), forgetAccount: jest.fn() }));
 jest.mock('../api', () => ({
@@ -54,7 +54,7 @@ const insight: Insight = { id: 'insight-1', body: 'You keep coming back to the r
 beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(accountToken).mockResolvedValue('token-1');
-  native.getPushTokenAsync.mockResolvedValue('fcm-token');
+  native.getPushRegistrationAsync.mockResolvedValue({ token: 'apns-token', apnsEnvironment: 'SANDBOX' });
   native.getInsight.mockReturnValue(null);
   mockedApi.latestInsight.mockResolvedValue(undefined);
 });
@@ -91,12 +91,26 @@ describe('sync', () => {
 
     expect(mockedApi.checkIn).toHaveBeenCalledWith('token-1', {
       platform: 'IOS',
-      pushToken: 'fcm-token',
+      pushToken: 'apns-token',
+      apnsEnvironment: 'SANDBOX',
       timeZone: 'Asia/Seoul',
     });
     expect(result.newInsight).toEqual(insight);
     expect(diary.insights).toEqual([insight]);
     expect(native.setInsight).toHaveBeenCalledWith({ ...insight, preview: null, revealed: true });
+  });
+
+  it('still checks in while the OS has no push token yet', async () => {
+    native.getPushRegistrationAsync.mockResolvedValue(null);
+
+    await sync(new MemoryDiary(), 'UTC', { full: true });
+
+    expect(mockedApi.checkIn).toHaveBeenCalledWith('token-1', {
+      platform: 'IOS',
+      pushToken: null,
+      apnsEnvironment: null,
+      timeZone: 'UTC',
+    });
   });
 
   it('starts over as a new account when the backend no longer knows the token', async () => {

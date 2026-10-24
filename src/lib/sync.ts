@@ -69,9 +69,11 @@ export class SyncQueue {
 
 async function syncWithToken(store: DiaryStore, token: string, timeZone: string, full: boolean): Promise<SyncResult> {
   if (full) {
+    const push = await InsightNative.getPushRegistrationAsync();
     await api.checkIn(token, {
       platform: Platform.OS === 'ios' ? 'IOS' : 'ANDROID',
-      pushToken: await InsightNative.getPushTokenAsync(),
+      pushToken: push?.token ?? null,
+      apnsEnvironment: push?.apnsEnvironment ?? null,
       timeZone,
     });
   }
