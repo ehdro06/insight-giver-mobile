@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="insight_widget_label">Insight</string>
+  <string name="insight_widget_description">Something you wrote, coming back to you once a day.</string>
+  <string name="insight_widget_title">✦ from your diary</string>
+  <string name="insight_widget_teaser_hint">Tap to read the rest</string>
+  <string name="insight_widget_empty">Write a few thoughts in the app. One day soon, something you wrote finds its way back here.</string>
+</resources>

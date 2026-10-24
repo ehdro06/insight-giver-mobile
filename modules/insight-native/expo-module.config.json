@@ -1,0 +1,10 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["InsightNativeModule"],
+    "appDelegateSubscribers": ["InsightAppDelegateSubscriber"]
+  },
+  "android": {
+    "modules": ["com.insightgiver.insightnative.InsightNativeModule"]
+  }
+}

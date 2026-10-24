@@ -1,0 +1,37 @@
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    // Glance widgets are written with Jetpack Compose (same setup as @expo/ui).
+    classpath("org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:${kotlinVersion}")
+  }
+}
+
+apply plugin: 'com.android.library'
+apply plugin: 'expo-module-gradle-plugin'
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
+
+group = 'com.insightgiver.insightnative'
+version = '0.1.0'
+
+android {
+  namespace "com.insightgiver.insightnative"
+  defaultConfig {
+    versionCode 1
+    versionName "0.1.0"
+  }
+  buildFeatures {
+    compose true
+  }
+  lintOptions {
+    abortOnError false
+  }
+}
+
+dependencies {
+  implementation platform('com.google.firebase:firebase-bom:35.0.2')
+  implementation 'com.google.firebase:firebase-messaging'
+  implementation 'androidx.glance:glance-appwidget:1.1.1'
+  implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2'
+}
