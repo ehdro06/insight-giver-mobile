@@ -1,0 +1,82 @@
+name: Native builds
+
+# Compiles the generated iOS and Android projects (Swift, Kotlin, the widget extension, the config
+# plugins' output), which the JS checks in ci.yml can't. iOS builds for the simulator without
+# code signing, so no Apple account or Mac is needed.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'modules/**'
+      - 'targets/**'
+      - 'app.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/native.yml'
+  pull_request:
+    paths:
+      - 'modules/**'
+      - 'targets/**'
+      - 'app.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/native.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: native-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: npm ci
+      - run: npx expo prebuild --platform android --no-install --clean
+        env:
+          CI: '1'
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug -PreactNativeArchitectures=x86_64 --stacktrace
+
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx expo prebuild --platform ios --clean
+        env:
+          CI: '1'
+      - name: Build for the simulator
+        run: |
+          xcodebuild -version
+          xcodebuild \
+            -workspace ios/InsightGiver.xcworkspace \
+            -scheme InsightGiver \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build | tee xcodebuild.log | grep -E "error:|warning: .*InsightNative|BUILD (SUCCEEDED|FAILED)" || true
+          grep -q "BUILD SUCCEEDED" xcodebuild.log
+      - name: Upload build log
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: xcodebuild-log
+          path: xcodebuild.log
