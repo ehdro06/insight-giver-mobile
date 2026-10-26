@@ -3,6 +3,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { createContext, use, useEffect, useMemo, useSyncExternalStore, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 
+import type { Delivery, DeliveryState } from './delivery';
 import { SqliteDiary, type Insight, type TimelineItem } from './diary';
 import { DiaryController } from './DiaryController';
 
@@ -40,15 +41,31 @@ export function DiaryProvider({ children }: { children: ReactNode }) {
   return <DiaryContext value={controller}>{children}</DiaryContext>;
 }
 
+function useController(): DiaryController {
+  const controller = use(DiaryContext);
+  if (!controller) {
+    throw new Error('Diary hooks must be used inside <DiaryProvider>');
+  }
+  return controller;
+}
+
 export function useDiary(): {
   items: TimelineItem[];
   write: (content: string) => Promise<void>;
   remember: (insight: Insight) => Promise<void>;
 } {
-  const controller = use(DiaryContext);
-  if (!controller) {
-    throw new Error('useDiary must be used inside <DiaryProvider>');
-  }
+  const controller = useController();
   const items = useSyncExternalStore(controller.subscribe, controller.getSnapshot);
   return { items, write: controller.write, remember: controller.remember };
+}
+
+/** When the daily insight arrives; `load` fetches it from the backend. */
+export function useDelivery(): {
+  state: DeliveryState;
+  load: () => Promise<void>;
+  choose: (delivery: Delivery) => Promise<void>;
+} {
+  const { delivery } = useController();
+  const state = useSyncExternalStore(delivery.subscribe, delivery.getSnapshot);
+  return { state, load: delivery.load, choose: delivery.choose };
 }

@@ -1,5 +1,6 @@
 import * as Crypto from 'expo-crypto';
 
+import { DeliverySettings } from './delivery';
 import { timeline, type Insight, type SqliteDiary, type TimelineItem } from './diary';
 import { sync, SyncQueue } from './sync';
 import { revealWidgetInsight } from './widget';
@@ -14,11 +15,14 @@ export class DiaryController {
   private readonly listeners = new Set<() => void>();
   private hasUnsynced = false;
   private readonly syncs: SyncQueue;
+  /** When the daily insight arrives. */
+  readonly delivery: DeliverySettings;
 
   constructor(
     private readonly diary: SqliteDiary,
     timeZone: () => string,
   ) {
+    this.delivery = new DeliverySettings(timeZone);
     this.syncs = new SyncQueue(
       (full) => sync(diary, timeZone(), { full }),
       () => void this.reload(),

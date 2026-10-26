@@ -1,4 +1,5 @@
-import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
+import { Link } from 'expo-router';
+import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Composer } from '@/components/Composer';
@@ -14,6 +15,11 @@ export default function DiaryScreen() {
     <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
       <View style={[styles.header, { borderBottomColor: theme.border }]}>
         <Text style={[styles.title, { color: theme.text }]}>Insight Giver</Text>
+        <Link href="/settings" asChild>
+          <Pressable hitSlop={12} accessibilityRole="button">
+            <Text style={[styles.settings, { color: theme.accent }]}>Settings</Text>
+          </Pressable>
+        </Link>
       </View>
       <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {items.length === 0 ? (
@@ -46,6 +52,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -53,6 +62,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 17,
     fontWeight: '600',
+  },
+  settings: {
+    fontSize: 15,
   },
   list: {
     padding: 16,

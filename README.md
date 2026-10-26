@@ -9,8 +9,9 @@ Expo SDK 58 · React Native 0.88 · Expo Router · expo-sqlite · iOS WidgetKit 
 ## What's where
 
 ```
-src/app/                 Expo Router screens: the diary (index) and the insight a widget tap opens
-src/lib/                 SQLite diary, offline outbox + sync, device account, widget hand-off
+src/app/                 Expo Router screens: the diary (index), the insight a widget tap opens, settings
+src/lib/                 SQLite diary, offline outbox + sync, device account, widget hand-off,
+                         delivery settings
 modules/insight-native/  local Expo module: native push handling, shared widget storage, push token,
                          the Android Glance widget, and a config plugin for app-level native settings
 targets/widget/          iOS WidgetKit extension, linked into the Xcode project by @bacons/apple-targets
@@ -49,8 +50,15 @@ background pushes by how much the app is used, and a widget alone barely counts.
 **Sync.** Entries are saved to SQLite first and uploaded in the background (idempotent per
 `clientId`), so writing works offline. Every launch reports the push token (APNs device token on
 iOS, together with whether it belongs to the sandbox or production; FCM token on Android) and the
-time zone, since the backend delivers insights in the person's local morning. It also pulls the
+time zone, since the backend delivers insights in the person's local time. It also pulls the
 latest insight, which catches the widget up if a push was lost.
+
+**When insights arrive.** Settings offers three choices, stored on the backend because the backend
+sends the push: every morning (09:00), a time the person picks (any quarter hour, picked with an
+hour strip and a quarter selector), or "surprise me", a different time each day between 09:00 and
+21:00. A choice shows at once and saves in the background (`DeliverySettings`); a failed save puts
+the previous one back. The 09:00 and 09:00–21:00 in the copy mirror the backend's
+`insight-giver.insights.delivery` settings.
 
 ## Setup
 
@@ -87,7 +95,9 @@ npm test
 npx expo prebuild --no-install --clean   # runs every config plugin without compiling native code
 ```
 
-CI runs all four. It does not compile Swift or Kotlin, so build the app after native changes.
+CI runs all four. `native.yml` also compiles the generated projects whenever native code, the app
+config or dependencies change: a debug APK on Linux and an unsigned simulator build of the iOS app
+and its widget on macOS.
 
 ## Known gaps
 
